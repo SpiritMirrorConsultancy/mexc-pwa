@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f0f1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MEXCPositionCalc">
+<title>MEXC Position Size Calculator</title>
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --card2: #222240;
+    --border: #2a2a4a;
+    --accent: #f0b90b;
+    --accent2: #f5c91c;
+    --green: #0ecb81;
+    --red: #f6465d;
+    --text: #eaeaea;
+    --text2: #8a8a9a;
+    --input-bg: #16162a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 {
+    font-size: 24px; font-weight: 600; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--text2); font-size: 13px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) {
+    .row, .row-3 { grid-template-columns: 1fr; }
+    .form-group input, .form-group select { font-size: 16px; }
+    .toggle-group button { padding: 12px 8px; font-size: 14px; }
+    .card { padding: 14px; }
+    .container { padding: 10px; }
+    h1 { font-size: 20px; }
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px;
+  }
+  .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; font-weight: 500; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 14px; outline: none;
+    transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group input[type="number"] { -moz-appearance: textfield; }
+  .form-group input[type="number"]::-webkit-outer-spin-button,
+  .form-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .toggle-group { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .toggle-group button {
+    flex: 1; padding: 9px; font-size: 13px; font-weight: 600; border: none;
+    cursor: pointer; transition: all 0.2s; background: var(--input-bg); color: var(--text2);
+  }
+  .toggle-group button.active-long { background: var(--green); color: #fff; }
+  .toggle-group button.active-short { background: var(--red); color: #fff; }
+  .toggle-group button.active-size { background: var(--accent); color: #fff; }
+  .form-group input:disabled { opacity: 0.55; cursor: not-allowed; }
+  .results { display: flex; flex-direction: column; gap: 6px; }
+  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--card2); border-radius: 6px; font-size: 13px; }
+  .result-row .label { color: var(--text2); }
+  .result-row .value { font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .value.green { color: var(--green); }
+  .value.red { color: var(--red); }
+  .value.accent { color: var(--accent); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge.pass { background: rgba(14, 203, 129, 0.15); color: var(--green); }
+  .badge.fail { background: rgba(246, 70, 93, 0.15); color: var(--red); }
+  .badge.warn { background: rgba(240, 185, 11, 0.15); color: var(--accent); }
+  .section { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .section-title { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .leverage-mode { display: flex; gap: 8px; margin-bottom: 12px; }
+  .leverage-mode button {
+    flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text2); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .leverage-mode button.active { border-color: var(--accent); color: var(--accent); background: rgba(240, 185, 11, 0.08); }
+  .hidden { display: none; }
+  .coin-info {
+    font-size: 11px; color: var(--text2); padding: 8px 12px; background: var(--card2); border-radius: 6px; margin-top: 6px; line-height: 1.6;
+  }
+  .footer { margin-top: 20px; text-align: center; font-size: 11px; color: var(--text2); }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .note {
+    background: rgba(240, 185, 11, 0.06); border: 1px solid rgba(240, 185, 11, 0.2);
+    border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text2); margin-top: 12px; line-height: 1.5;
+  }
+  .ticket {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 12px; line-height: 1.7;
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; color: var(--text); margin-top: 8px;
+  }
+  .copy-btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .copy-btn:hover { background: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><span>⬡</span> MEXC Position Size Calculator</h1>
+  <div class="subtitle">Risk-first position sizing · Market orders · Stop-loss · Leverage & margin · USDT-margined perpetuals</div>
+  <div class="grid">
+    <!-- INPUTS -->
+    <div class="card">
+      <h2>📐 Position Setup</h2>
+      <div class="form-group">
+        <label>Coin / Contract</label>
+        <select id="coin"></select>
+        <div class="coin-info" id="coinInfo"></div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Direction</label>
+          <div class="toggle-group" id="direction">
+            <button id="dirLong" class="active-long">Long ▲</button>
+            <button id="dirShort">Short ▼</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Total Capital (USDT)</label>
+          <input type="number" id="capital" value="1000" step="1" min="1">
+        </div>
+      </div>
+      <div class="row-3">
+        <div class="form-group">
+          <label>Risk per Trade (%)</label>
+          <input type="number" id="riskPct" value="2" step="0.1" min="0.1" max="100">
+        </div>
+        <div class="form-group">
+          <label>Stop Price (USDT) — from your chart</label>
+          <input type="number" id="stopPrice" value="57000" step="any" min="0.00001">
+          <div id="stopHint" style="font-size:11px;color:var(--text2);margin-top:4px">distance from entry: —</div>
+        </div>
+        <div class="form-group">
+          <label>Slippage Buffer (%)</label>
+          <input type="number" id="slippage" value="0.5" step="0.1" min="0">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Position Sizing</label>
+          <div class="toggle-group" id="sizingMode">
+            <button id="sizeAuto" class="active-size">By risk % (auto)</button>
+            <button id="sizeManual">By contracts</button>
+          </div>
+          <div style="margin-top:10px">
+            <label>Position Size (contracts)</label>
+            <input type="number" id="contracts" value="10" step="1" min="1" disabled>
+            <div id="sizeHint" style="font-size:11px;color:var(--text2);margin-top:4px">auto-computed from risk % — floor-rounded so it never exceeds the budget</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Price Source</label>
+          <div class="toggle-group" id="entryMode">
+            <button id="entryLive" class="active-size">Live price</button>
+            <button id="entryZone">Entry zone</button>
+          </div>
+          <div style="margin-top:10px">
+            <label id="priceLabel">Market Price (USDT)</label>
+            <input type="number" id="price" value="60000" step="0.01" min="0.00001">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text2)">
+              <span>Live: <span id="livePrice" style="color:var(--accent);font-weight:600">—</span></span>
+              <label id="followLiveLabel" style="display:flex;align-items:center;gap:5px;cursor:pointer">
+                <input type="checkbox" id="followLive" checked style="accent-color:var(--accent)"> follow live
+              </label>
+            </div>
+            <div id="entryStatus" style="font-size:11px;margin-top:4px;min-height:14px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Leverage Mode</div>
+        <div class="leverage-mode">
+          <button id="leverageModeA" class="active">(A) Min margin at max tier leverage</button>
+          <button id="leverageModeB">(B) Use target leverage</button>
+        </div>
+        <div class="form-group hidden" id="targetLeverageGroup">
+          <label>Target Leverage (1–<span id="maxLevLabel">500</span>x)</label>
+          <input type="number" id="targetLeverage" value="10" step="1" min="1" max="500">
+        </div>
+      </div>
+    </div>
+    <!-- RESULTS -->
+    <div class="card">
+      <h2>📊 Results</h2>
+      <div id="results">
+        <div class="result-row"><span class="label">Position Size</span><span class="value accent" id="rQty">—</span></div>
+        <div class="result-row"><span class="label">Notional Value</span><span class="value accent" id="rNotional">—</span></div>
+        <div class="result-row"><span class="label">Effective Entry (w/ slippage)</span><span class="value" id="rEntry">—</span></div>
+        <div class="result-row"><span class="label">Risk Tier</span><span class="value" id="rTier">—</span></div>
+        <div class="result-row"><span class="label">Leverage Used</span><span class="value" id="rLeverage">—</span></div>
+        <div class="result-row"><span class="label">Initial Margin Required</span><span class="value accent" id="rMargin">—</span></div>
+        <div class="result-row"><span class="label">Safe Leverage Ceiling</span><span class="value" id="rSafeLev">—</span></div>
+        <div class="result-row"><span class="label">Liquidation Price</span><span class="value red" id="rLiq">—</span></div>
+        <div class="result-row"><span class="label">Stop-Loss Price</span><span class="value" id="rStop">—</span></div>
+        <div class="result-row"><span class="label">Stop Distance (from chart)</span><span class="value" id="rStopDist">—</span></div>
+        <div class="result-row"><span class="label">Effective Stop Fill (w/ slippage)</span><span class="value" id="rStopFill">—</span></div>
+        <div class="result-row"><span class="label">Max Loss at Stop (price loss)</span><span class="value" id="rMaxLoss">—</span></div>
+        <div class="result-row"><span class="label">Risk Used (% of capital)</span><span class="value" id="rRiskUsed">—</span></div>
+        <div class="result-row"><span class="label">Fee Estimate (entry + exit)</span><span class="value" id="rFees">—</span></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Checks</div>
+        <div id="checks">
+          <div class="result-row"><span class="label">Risk Budget</span><span id="cBudget">—</span></div>
+          <div class="result-row"><span class="label">Stop triggers before liquidation</span><span id="cStopLiq">—</span></div>
+          <div class="result-row"><span class="label">Sufficient capital for margin</span><span id="cCapital">—</span></div>
+          <div class="result-row"><span class="label">Position ≤ maxVol</span><span id="cMaxVol">—</span></div>
+          <div class="result-row"><span class="label">Min order (≥ 1 contract)</span><span id="cMinVol">—</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">MEXC Order Ticket <button id="copyTicket" class="copy-btn" style="float:right">Copy</button></div>
+        <div class="ticket" id="ticket">—</div>
+      </div>
+      <div class="note" id="warnings"></div>
+    </div>
+  </div>
+  <div class="footer">
+    Data sourced from <a href="https://www.mexc.com/" target="_blank">MEXC</a> live API · Formulas follow MEXC liquidation mechanics · Not financial advice
+    <div style="margin-top:4px" id="dataDate"></div>
+    <div style="margin-top:2px" id="liveStatus">Live updates: not connected</div>
+  </div>
+</div>
+
+<script>
+// ─── Contract Data from MEXC live API ─────────────────────────────────────────
+// __MEXC_DATA_START__
+const CONTRACTS = {
+  "BTC_USDT": {
+    coin: "BTC",
+    contractSize: 0.0001,
+    maxLeverage: 500.0,
+    takerFee: 0.0002,
+    makerFee: 0.0,
+    mmr: 0.001,
+    imr: 0.002,
+    liqFee: 0.0004,
+    priceUnit: 0.1,
+    priceScale: 1.0,
+    maxVol: 400000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.1,
+    isZeroFee: false,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 50000.0, mmr: 0.001, imr: 0.002, maxLev: 500.0 },
+      { maxVol: 310000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+      { maxVol: 480000.0, mmr: 0.005, imr: 0.01, maxLev: 100.0 },
+      { maxVol: 2800000.0, mmr: 0.01, imr: 0.02, maxLev: 50.0 },
+      { maxVol: 17500000.0, mmr: 0.02, imr: 0.05, maxLev: 20.0 },
+      { maxVol: 19000000.0, mmr: 0.05, imr: 0.1, maxLev: 10.0 },
+    ],
+  },
+  "ETH_USDT": {
+    coin: "ETH",
+    contractSize: 0.01,
+    maxLeverage: 500.0,
+    takerFee: 0.0001,
+    makerFee: 0.0,
+    mmr: 0.001,
+    imr: 0.002,
+    liqFee: 0.0001,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 70000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: false,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 19000.0, mmr: 0.001, imr: 0.002, maxLev: 500.0 },
+      { maxVol: 107000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+      { maxVol: 150000.0, mmr: 0.005, imr: 0.01, maxLev: 100.0 },
+      { maxVol: 860000.0, mmr: 0.01, imr: 0.02, maxLev: 50.0 },
+      { maxVol: 4500000.0, mmr: 0.02, imr: 0.05, maxLev: 20.0 },
+      { maxVol: 4800000.0, mmr: 0.05, imr: 0.1, maxLev: 10.0 },
+    ],
+  },
+  "ADA_USDT": {
+    coin: "ADA",
+    contractSize: 1.0,
+    maxLeverage: 300.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.0023,
+    imr: 0.00333333,
+    liqFee: 0.0,
+    priceUnit: 0.0001,
+    priceScale: 4.0,
+    maxVol: 11000000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 550000.0, mmr: 0.0023, imr: 0.00333333, maxLev: 300.0 },
+      { maxVol: 10500000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "XRP_USDT": {
+    coin: "XRP",
+    contractSize: 1.0,
+    maxLeverage: 300.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.0023,
+    imr: 0.00333333,
+    liqFee: 0.0002,
+    priceUnit: 0.0001,
+    priceScale: 4.0,
+    maxVol: 840000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 160000.0, mmr: 0.0023, imr: 0.00333333, maxLev: 300.0 },
+      { maxVol: 2400000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+      { maxVol: 8535000.0, mmr: 0.02, imr: 0.04, maxLev: 25.0 },
+    ],
+  },
+  "AVAX_USDT": {
+    coin: "AVAX",
+    contractSize: 0.1,
+    maxLeverage: 200.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0,
+    priceUnit: 0.001,
+    priceScale: 3.0,
+    maxVol: 2800000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 2800000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "LTC_USDT": {
+    coin: "LTC",
+    contractSize: 0.01,
+    maxLeverage: 200.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 3200000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 3200000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+      { maxVol: 4200000.0, mmr: 0.01, imr: 0.02, maxLev: 50.0 },
+    ],
+  },
+  "ATOM_USDT": {
+    coin: "ATOM",
+    contractSize: 0.1,
+    maxLeverage: 200.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0,
+    priceUnit: 0.001,
+    priceScale: 3.0,
+    maxVol: 5000000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 5000000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "TRX_USDT": {
+    coin: "TRX",
+    contractSize: 10.0,
+    maxLeverage: 200.0,
+    takerFee: 0.0002,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0002,
+    priceUnit: 1e-05,
+    priceScale: 5.0,
+    maxVol: 200000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: false,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 305000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "BNB_USDT": {
+    coin: "BNB",
+    contractSize: 0.01,
+    maxLeverage: 200.0,
+    takerFee: 0.0002,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0002,
+    priceUnit: 0.1,
+    priceScale: 1.0,
+    maxVol: 285000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: false,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 285000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "XMR_USDT": {
+    coin: "XMR",
+    contractSize: 0.01,
+    maxLeverage: 100.0,
+    takerFee: 0.0002,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.01,
+    liqFee: 0.0002,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 13000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: false,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 13000.0, mmr: 0.004, imr: 0.01, maxLev: 100.0 },
+    ],
+  },
+  "ZEC_USDT": {
+    coin: "ZEC",
+    contractSize: 0.01,
+    maxLeverage: 100.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.005,
+    imr: 0.01,
+    liqFee: 0.0002,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 65100.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 65100.0, mmr: 0.005, imr: 0.01, maxLev: 100.0 },
+    ],
+  },
+  "NEAR_USDT": {
+    coin: "NEAR",
+    contractSize: 1.0,
+    maxLeverage: 200.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0,
+    priceUnit: 0.001,
+    priceScale: 3.0,
+    maxVol: 1050000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 200000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+      { maxVol: 400000.0, mmr: 0.02, imr: 0.05, maxLev: 20.0 },
+    ],
+  },
+  "SOL_USDT": {
+    coin: "SOL",
+    contractSize: 0.1,
+    maxLeverage: 300.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.0023,
+    imr: 0.00333333,
+    liqFee: 0.0001,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 1600000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 31000.0, mmr: 0.0023, imr: 0.00333333, maxLev: 300.0 },
+      { maxVol: 1185000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "LINK_USDT": {
+    coin: "LINK",
+    contractSize: 0.1,
+    maxLeverage: 300.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.0023,
+    imr: 0.00333333,
+    liqFee: 0.0002,
+    priceUnit: 0.001,
+    priceScale: 3.0,
+    maxVol: 850000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "CUSTOM",
+    tiers: [
+      { maxVol: 230000.0, mmr: 0.0023, imr: 0.00333333, maxLev: 300.0 },
+      { maxVol: 1550000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+  "AAVE_USDT": {
+    coin: "AAVE",
+    contractSize: 0.01,
+    maxLeverage: 200.0,
+    takerFee: 0.0,
+    makerFee: 0.0,
+    mmr: 0.004,
+    imr: 0.005,
+    liqFee: 0.0,
+    priceUnit: 0.01,
+    priceScale: 2.0,
+    maxVol: 1200000.0,
+    minVol: 1.0,
+    marketOrderBand: 0.2,
+    isZeroFee: true,
+    riskLimitMode: "INCREASE",
+    tiers: [
+      { maxVol: 1200000.0, mmr: 0.004, imr: 0.005, maxLev: 200.0 },
+    ],
+  },
+};
+const DATA_DATE = "2026-08-28 20:11 UTC (refreshed by launch.py)";
+// __MEXC_DATA_END__
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const sel = $('coin');
+const coinInfo = $('coinInfo');
+const dirLong = $('dirLong');
+const dirShort = $('dirShort');
+const capitalIn = $('capital');
+const riskPctIn = $('riskPct');
+const stopPriceIn = $('stopPrice');
+const stopHint = $('stopHint');
+const ticket = $('ticket');
+const copyBtn = $('copyTicket');
+let ticketText = '';
+copyBtn.addEventListener('click', () => {
+  if (!ticketText) return;
+  const done = () => { copyBtn.textContent = 'Copied ✓'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500); };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = ticketText;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { copyBtn.textContent = 'Copy failed'; }
+    setTimeout(() => { document.body.removeChild(ta); }, 1500);
+  };
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ticketText).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+});
+const slippageIn = $('slippage');
+const contractsIn = $('contracts');
+const sizeAutoBtn = $('sizeAuto');
+const sizeManualBtn = $('sizeManual');
+const sizeHint = $('sizeHint');
+const priceIn = $('price');
+const modeA = $('leverageModeA');
+const modeB = $('leverageModeB');
+const targetLevIn = $('targetLeverage');
+const targetLevGroup = $('targetLeverageGroup');
+const maxLevLabel = $('maxLevLabel');
+const warnings = $('warnings');
+const livePriceEl = $('livePrice');
+const followLiveEl = $('followLive');
+const liveStatusEl = $('liveStatus');
+const entryLiveBtn = $('entryLive');
+const entryZoneBtn = $('entryZone');
+const entryStatusEl = $('entryStatus');
+const priceLabel = $('priceLabel');
+const followLiveLabel = $('followLiveLabel');
+
+// ─── Live update settings ────────────────────────────────────────────────────
+const LIVE_POLL_MS = 30000;  // poll the local /api/live endpoint this often
+let followLive = true;       // auto-fill the price field from live data
+let lastPrices = {};         // most recent live prices {symbol: price}
+
+// ─── Populate coin selector ──────────────────────────────────────────────────
+const symbols = Object.keys(CONTRACTS);
+symbols.forEach(sym => {
+  const c = CONTRACTS[sym];
+  const feeLabel = c.isZeroFee ? '0% fee' : (c.takerFee * 100).toFixed(c.takerFee * 100 < 0.01 ? 3 : 2) + '% fee';
+  const opt = document.createElement('option');
+  opt.value = sym;
+  opt.textContent = `${c.coin} │ ${sym} │ ${c.maxLeverage}x max │ ${c.contractSize} per cont │ ${feeLabel}`;
+  sel.appendChild(opt);
+});
+
+function getContract() { return CONTRACTS[sel.value]; }
+
+function updateCoinInfo() {
+  const c = getContract();
+  if (!c) return;
+  const feeStr = c.isZeroFee ? '0% (0-fee zone)' : (c.takerFee * 100) + '% taker';
+  const maxVolStr = c.maxVol >= 1000000 ? (c.maxVol / 1000000).toFixed(1) + 'M' : c.maxVol.toLocaleString();
+  coinInfo.innerHTML = `
+    <strong>${c.coin}</strong> · Size: 1 cont = ${c.contractSize} ${c.coin} · Max lev: ${c.maxLeverage}x<br>
+    Taker fee: ${feeStr} · MMR: ${(c.mmr * 100).toFixed(2)}% · Max order: ${maxVolStr} cont<br>
+    Price tick: ${c.priceUnit} · Slippage band: ±${(c.marketOrderBand * 100)}% · Tiers: ${c.tiers.length}
+  `;
+  maxLevLabel.textContent = c.maxLeverage;
+  targetLevIn.max = c.maxLeverage;
+}
+sel.addEventListener('change', updateCoinInfo);
+
+// Editing the price field manually turns live-follow off (re-enable via checkbox)
+priceIn.addEventListener('input', () => {
+  if (followLive) { followLive = false; followLiveEl.checked = false; }
+});
+followLiveEl.addEventListener('change', () => { followLive = followLiveEl.checked; });
+updateCoinInfo();
+
+// ─── Direction toggle ────────────────────────────────────────────────────────
+let isLong = true;
+dirLong.addEventListener('click', () => { isLong = true; dirLong.className = 'active-long'; dirShort.className = ''; calc(); });
+dirShort.addEventListener('click', () => { isLong = false; dirShort.className = 'active-short'; dirLong.className = ''; calc(); });
+
+// ─── Sizing mode toggle ───────────────────────────────────────────────────────
+let sizingAuto = true; // true: size solved from risk % · false: manual override
+sizeAutoBtn.addEventListener('click', () => {
+  sizingAuto = true; sizeAutoBtn.className = 'active-size'; sizeManualBtn.className = '';
+  contractsIn.disabled = true;
+  sizeHint.textContent = 'auto-computed from risk % — floor-rounded so it never exceeds the budget';
+  calc();
+});
+sizeManualBtn.addEventListener('click', () => {
+  sizingAuto = false; sizeManualBtn.className = 'active-size'; sizeAutoBtn.className = '';
+  contractsIn.disabled = false;
+  sizeHint.textContent = 'manual override — the risk check becomes a validation';
+  calc();
+});
+
+// ─── Entry mode toggle ───────────────────────────────────────────────────────
+let entryZoneMode = false; // false: entry = live price · true: entry = planned zone
+entryLiveBtn.addEventListener('click', () => {
+  entryZoneMode = false;
+  entryLiveBtn.className = 'active-size'; entryZoneBtn.className = '';
+  priceLabel.textContent = 'Market Price (USDT)';
+  followLiveLabel.style.display = '';
+  calc();
+});
+entryZoneBtn.addEventListener('click', () => {
+  entryZoneMode = true;
+  entryZoneBtn.className = 'active-size'; entryLiveBtn.className = '';
+  priceLabel.textContent = 'Entry Price (USDT) — planned zone from your chart';
+  followLive = false; followLiveEl.checked = false;
+  followLiveLabel.style.display = 'none';
+  calc();
+});
+
+// ─── Leverage mode toggle ─────────────────────────────────────────────────────
+let useModeA = true;
+modeA.addEventListener('click', () => { useModeA = true; modeA.className = 'active'; modeB.className = ''; targetLevGroup.classList.add('hidden'); calc(); });
+modeB.addEventListener('click', () => { useModeA = false; modeB.className = 'active'; modeA.className = ''; targetLevGroup.classList.remove('hidden'); calc(); });
+
+// ─── Find the applicable risk tier ───────────────────────────────────────────
+function findTier(contract, contractsQty) {
+  const tiers = contract.tiers.slice().sort((a, b) => a.maxVol - b.maxVol);
+  // Ascending: the applicable tier is the SMALLEST tier that covers the qty
+  // (tier 1 = smallest size = highest leverage, per MEXC risk limits)
+  for (let i = 0; i < tiers.length; i++) {
+    if (contractsQty <= tiers[i].maxVol) return { ...tiers[i], index: i };
+  }
+  return null; // exceeds all tiers — not tradeable
+}
+
+// ─── Format helpers ───────────────────────────────────────────────────────────
+function fmt(n, decimals) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (abs >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+  if (decimals !== undefined) return n.toFixed(decimals);
+  if (abs < 0.0001) return n.toFixed(8);
+  if (abs < 0.01) return n.toFixed(6);
+  if (abs < 1) return n.toFixed(4);
+  return n.toFixed(2);
+}
+function fmtUsdt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return n.toFixed(2) + ' USDT';
+}
+function badge(pass, text) {
+  const cls = pass ? 'pass' : 'fail';
+  return `<span class="badge ${cls}">${pass ? '✅' : '❌'} ${text}</span>`;
+}
+
+// ─── Main calculation ─────────────────────────────────────────────────────────
+function calc() {
+  const c = getContract();
+  if (!c) return;
+  const price = parseFloat(priceIn.value);
+  const capital = parseFloat(capitalIn.value);
+  const riskPct = parseFloat(riskPctIn.value) / 100;
+  const stopPriceVal = parseFloat(stopPriceIn.value);
+  const slippagePct = parseFloat(slippageIn.value) / 100;
+  const targetLev = parseFloat(targetLevIn.value);
+
+  if ([price, capital, riskPct, stopPriceVal, slippagePct].some(isNaN)) return;
+  if (price <= 0 || capital <= 0) return;
+
+  // The stop level from your chart must sit on the correct side of the entry
+  const stopSideOk = isLong ? stopPriceVal < price : stopPriceVal > price;
+
+  // ─── Effective prices (slippage always against you) ──────────────────────
+  const slipMult = isLong ? (1 + slippagePct) : (1 - slippagePct);
+  const entryEff = price * slipMult;
+
+  let stopPrice, stopFill;
+  if (isLong) {
+    stopPrice = stopPriceVal;                   // trigger below entry (chart level)
+    stopFill = stopPrice * (1 - slippagePct);   // exit market order slips lower
+  } else {
+    stopPrice = stopPriceVal;                   // trigger above entry (chart level)
+    stopFill = stopPrice * (1 + slippagePct);   // exit market order slips higher
+  }
+
+  // Chart-visible distance + worst-case distance including slippage
+  const stopDistNominal = Math.abs(price - stopPrice) / price;
+  const stopDistEff = entryEff > 0 ? Math.abs(entryEff - stopFill) / entryEff : 0;
+  stopHint.textContent = stopSideOk
+    ? `distance from entry: ${(stopDistNominal * 100).toFixed(2)}% (${(stopDistEff * 100).toFixed(2)}% incl. slippage)`
+    : (isLong ? '⚠ stop must be BELOW the entry price' : '⚠ stop must be ABOVE the entry price');
+
+  const contractSize = c.contractSize;
+  // Raw price loss per contract at the stop fill (risk budget covers ONLY this)
+  const unitLoss = Math.abs(entryEff - stopFill) * contractSize;
+  const riskBudget = capital * riskPct;
+
+  // ─── Position size: solved from risk % (auto) or manual override ─────────
+  let qty;
+  let qtyFromRisk = null;
+  if (stopSideOk) {
+    if (sizingAuto) {
+      qtyFromRisk = unitLoss > 0 ? riskBudget / unitLoss : Infinity;
+      qty = Math.floor(qtyFromRisk);            // floor: never exceed the budget
+      if (!isFinite(qty)) qty = 0;
+      contractsIn.value = qty;
+    } else {
+      qty = parseInt(contractsIn.value, 10);
+    }
+    if (!qty || qty < 1) qty = 0;
+  } else {
+    qty = 0;
+  }
+
+  // ─── Risk tier (based on the resulting position size) ────────────────────
+  const tier = findTier(c, Math.max(qty, 1));
+  if (!tier) {
+    $('rQty').textContent = qty.toLocaleString() + ' cont';
+    $('rNotional').textContent = '❌ Exceeds all tiers';
+    warnings.innerHTML = '🚫 Position exceeds the largest risk tier for this contract — not tradeable.';
+    warnings.style.display = 'block';
+    return;
+  }
+
+  const notional = qty * contractSize * entryEff;
+
+  // ─── Safe leverage ceiling ────────────────────────────────────────────────
+  // MEXC liq: liq = entry * (1 ∓ (1/lev − mmr)). The worst-case stop fill must
+  // stay beyond liq → 1/lev > stopDistEff + mmr → lev < 1 / (stopDistEff + mmr)
+  // (stopDistEff is computed above, next to the chart-visible distance)
+  let safeLev = 0;
+  if (stopDistEff + tier.mmr > 0 && stopDistEff + tier.mmr < 1) {
+    safeLev = Math.floor(1 / (stopDistEff + tier.mmr));
+  }
+  safeLev = Math.min(safeLev, tier.maxLev);
+
+  // ─── Leverage per mode ────────────────────────────────────────────────────
+  let leverage, isMaxMode = true;
+  if (useModeA) {
+    leverage = tier.maxLev;
+  } else {
+    isMaxMode = false;
+    leverage = Math.min(targetLev, tier.maxLev);
+  }
+  const levCapped = !useModeA && targetLev > tier.maxLev;
+
+  const initialMargin = notional / leverage;
+  const marginAtSafe = safeLev > 0 ? notional / safeLev : null;
+
+  let liqPrice;
+  if (isLong) liqPrice = entryEff * (1 - 1/leverage + tier.mmr);
+  else liqPrice = entryEff * (1 + 1/leverage - tier.mmr);
+
+  // ─── Risk & fees (fees shown separately from the budget) ─────────────────
+  const maxLoss = qty * unitLoss;
+  const feeRate = c.takerFee;
+  const feeEntry = notional * feeRate;
+  const feeExit = qty * contractSize * stopFill * feeRate;
+  const totalFees = feeEntry + feeExit;
+  const totalExitCost = maxLoss + totalFees;
+
+  const riskUsedPct = capital > 0 ? (maxLoss / capital) * 100 : 0;
+  const budgetOk = maxLoss <= riskBudget;   // auto mode: always true (floor)
+  const feesFit = totalExitCost <= riskBudget;
+
+  // ─── Checks ───────────────────────────────────────────────────────────────
+  let stopBeforeLiq;
+  if (isLong) stopBeforeLiq = stopPrice > liqPrice;
+  else stopBeforeLiq = stopPrice < liqPrice;
+
+  const capitalOk = qty > 0 && initialMargin <= capital;
+  const maxVolOk = qty > 0 && qty <= c.maxVol;
+  const minVolOk = qty >= c.minVol;
+
+  // ─── Render results ───────────────────────────────────────────────────────
+  const ps = c.priceScale || 2;
+  const rawStr = (sizingAuto && qtyFromRisk !== null && isFinite(qtyFromRisk))
+    ? `  (raw ${qtyFromRisk.toLocaleString(undefined, { maximumFractionDigits: 1 })})` : '';
+  $('rQty').textContent = qty.toLocaleString() + ' cont' + rawStr;
+  $('rNotional').textContent = qty > 0 ? fmtUsdt(notional) : '—';
+  $('rEntry').textContent = entryEff.toFixed(ps) + ' USDT';
+  $('rTier').innerHTML = `Tier ${tier.index + 1} · ${tier.maxLev}x max · MMR ${(tier.mmr * 100).toFixed(2)}%`;
+  $('rLeverage').textContent = leverage + 'x' + (isMaxMode ? ' (max for tier)' : (levCapped ? ' (capped)' : ''));
+  $('rMargin').textContent = qty > 0 ? fmtUsdt(initialMargin) : '—';
+  $('rSafeLev').innerHTML = stopSideOk && safeLev > 0
+    ? `${safeLev}x · margin ${fmtUsdt(marginAtSafe)}`
+    : (stopSideOk && stopDistEff + tier.mmr >= 1 ? "none — stop can't beat liq" : '—');
+  $('rLiq').textContent = qty > 0 ? liqPrice.toFixed(ps) + ' USDT' : '—';
+  $('rStop').textContent = stopPrice.toFixed(ps) + ' USDT';
+  $('rStopFill').textContent = stopFill.toFixed(ps) + ' USDT';
+  $('rStopDist').textContent = stopSideOk
+    ? `${(stopDistNominal * 100).toFixed(2)}% · ${(stopDistEff * 100).toFixed(2)}% incl. slippage`
+    : '—';
+  $('rMaxLoss').textContent = qty > 0 ? fmtUsdt(maxLoss) : '—';
+  $('rRiskUsed').textContent = qty > 0
+    ? `${riskUsedPct.toFixed(2)}% of ${(riskPct * 100).toFixed(2)}%  (${fmtUsdt(maxLoss)} of ${fmtUsdt(riskBudget)})`
+    : '—';
+  $('rFees').textContent = qty > 0 ? (feeRate === 0 ? '0 USDT (0-fee pair)' : fmtUsdt(totalFees)) : '—';
+
+  $('cBudget').innerHTML = qty > 0 ? badge(budgetOk, `${fmtUsdt(maxLoss)} ≤ ${fmtUsdt(riskBudget)}`) : '—';
+  $('cStopLiq').innerHTML = qty > 0 ? badge(stopBeforeLiq,
+    isLong
+      ? `Stop ${stopPrice.toFixed(ps)} > Liq ${liqPrice.toFixed(ps)}`
+      : `Stop ${stopPrice.toFixed(ps)} < Liq ${liqPrice.toFixed(ps)}`
+  ) : '—';
+  $('cCapital').innerHTML = qty > 0 ? badge(capitalOk, `${fmtUsdt(initialMargin)} ≤ ${fmtUsdt(capital)}`) : '—';
+  $('cMaxVol').innerHTML = qty > 0 ? badge(maxVolOk, `${qty.toLocaleString()} ≤ ${c.maxVol.toLocaleString()} cont`) : '—';
+  $('cMinVol').innerHTML = badge(minVolOk, `${qty} ≥ ${c.minVol} cont`);
+
+  // ─── Warnings ─────────────────────────────────────────────────────────────
+  const warns = [];
+  if (!stopSideOk) warns.push('🚫 Stop price is on the wrong side of the entry — for a long it must be BELOW the entry, for a short ABOVE.');
+  if (sizingAuto && !isFinite(qtyFromRisk)) {
+    warns.push('⚠️ Set a stop distance greater than 0 so a position can be sized.');
+  } else if (sizingAuto && qtyFromRisk !== null && qtyFromRisk < 1) {
+    warns.push(`⚠️ Risk budget (${fmtUsdt(riskBudget)}) can't cover even 1 contract on ${c.coin} at this stop — 1 contract would risk ≈ ${fmtUsdt(unitLoss)}. Increase risk % or widen the stop.`);
+  }
+  if (!sizingAuto && !budgetOk) {
+    warns.push(`⚠️ Max loss (${fmtUsdt(maxLoss)}) exceeds risk budget (${fmtUsdt(riskBudget)}). Reduce position size or increase risk %.`);
+  }
+  if (!sizingAuto && !minVolOk) warns.push('⚠️ Position must be at least 1 contract.');
+  if (qty > 0 && !feesFit && totalFees > 0) {
+    warns.push(`ℹ️ Fees add ${fmtUsdt(totalFees)} (kept separate from the budget) — total exit cost ${fmtUsdt(totalExitCost)} ${totalExitCost <= riskBudget ? 'stays within' : 'exceeds'} the risk budget by ${fmtUsdt(Math.abs(totalExitCost - riskBudget))}.`);
+  }
+  if (qty > 0 && !stopBeforeLiq) {
+    if (safeLev > 0 && safeLev < leverage) {
+      warns.push(`🚫 At ${leverage}x, liquidation (${liqPrice.toFixed(ps)}) beats your stop (${stopPrice.toFixed(ps)}) — the exchange would liquidate you before the stop triggers. Max safe leverage for this stop: ${safeLev}x → margin ≈ ${fmtUsdt(marginAtSafe)}.`);
+    } else {
+      warns.push(`🚫 Stop-loss at ${stopPrice.toFixed(ps)} will NOT trigger before liquidation at ${liqPrice.toFixed(ps)}. The exchange will liquidate you first. Move stop closer to entry or use lower leverage.`);
+    }
+  }
+  if (qty > 0 && !capitalOk) warns.push(`❌ Initial margin (${fmtUsdt(initialMargin)}) exceeds total capital (${fmtUsdt(capital)}). This position cannot be opened — reduce risk %, widen the stop, or add capital.`);
+  if (qty > 0 && !maxVolOk) warns.push(`❌ Position (${qty.toLocaleString()} cont) exceeds max single order (${c.maxVol.toLocaleString()} cont). Reduce risk % or widen the stop to shrink the computed size.`);
+  if (levCapped) warns.push(`⚠️ Target leverage (${targetLev}x) exceeds tier max (${tier.maxLev}x). Capped at ${tier.maxLev}x.`);
+  if (isLong && qty > 0 && liqPrice <= 0) warns.push('🚫 Liquidation price is zero/negative — this position is already underwater at entry.');
+
+  // ─── MEXC order ticket (copy-ready) ───────────────────────────────────────
+  ticketText = '';
+  if (stopSideOk && qty > 0) {
+    const lines = [
+      `MEXC Futures — ${sel.value}`,
+      '────────────────────────',
+      `Side        : ${isLong ? 'Buy (Long)' : 'Sell (Short)'}`,
+      'Order type  : Market',
+      `Quantity    : ${qty.toLocaleString()} contracts`,
+      `Leverage    : ${leverage}x`,
+      'Margin mode : Isolated',
+      `SL trigger  : ${stopPrice.toFixed(ps)}`,
+      `SL fill est.: ${stopFill.toFixed(ps)} (worst case w/ slippage)`,
+    ];
+    if (safeLev > 0 && safeLev < leverage) {
+      lines.push(`⚠ For your SL to trigger first, use ≤ ${safeLev}x`);
+    }
+    ticketText = lines.join('\n');
+    ticket.innerHTML = ticketText.replace(/\n/g, '<br>');
+  } else {
+    ticket.innerHTML = '—';
+  }
+
+  // ─── Entry-zone status (planned entry vs live price) ─────────────────────
+  if (entryZoneMode) {
+    const live = lastPrices[sel.value];
+    if (live) {
+      const gapPct = (live - price) / price * 100; // + → live is above entry
+      let msg, color;
+      if (isLong) {
+        if (gapPct > 0) { msg = `⏳ waiting — live ${fmtPrice(live, c)} · price must fall ${gapPct.toFixed(2)}% to reach your entry`; color = 'var(--accent)'; }
+        else { msg = `✅ in zone — live ${fmtPrice(live, c)} is at/below your entry — enter at market`; color = 'var(--green)'; }
+      } else {
+        if (gapPct < 0) { msg = `⏳ waiting — live ${fmtPrice(live, c)} · price must rise ${(-gapPct).toFixed(2)}% to reach your entry`; color = 'var(--accent)'; }
+        else { msg = `✅ in zone — live ${fmtPrice(live, c)} is at/above your entry — enter at market`; color = 'var(--green)'; }
+      }
+      entryStatusEl.textContent = msg;
+      entryStatusEl.style.color = color;
+    } else {
+      entryStatusEl.textContent = 'live price unavailable (snapshot mode)';
+      entryStatusEl.style.color = 'var(--text2)';
+    }
+  } else {
+    entryStatusEl.textContent = '';
+  }
+
+  if (warns.length) {
+    warnings.innerHTML = warns.join('<br>');
+    warnings.style.borderColor = '';
+    warnings.style.background = '';
+  } else {
+    warnings.innerHTML = '✅ All checks pass. This position is within your risk parameters.';
+    warnings.style.borderColor = 'rgba(14, 203, 129, 0.2)';
+    warnings.style.background = 'rgba(14, 203, 129, 0.04)';
+  }
+}
+
+// ─── Bind input events ────────────────────────────────────────────────────────
+const inputs = [capitalIn, riskPctIn, stopPriceIn, slippageIn, contractsIn, priceIn, targetLevIn];
+inputs.forEach(el => el.addEventListener('input', calc));
+sel.addEventListener('change', calc);
+
+// ─── Initial calculation ──────────────────────────────────────────────────────
+calc();
+
+// ─── Set initial example price based on selected coin ────────────────────────
+// __MEXC_PRICES_START__
+const PRICE_EXAMPLES = {
+  "BTC_USDT": 77539.3,
+  "ETH_USDT": 2434.03,
+  "ADA_USDT": 0.2019,
+  "XRP_USDT": 1.3823,
+  "AVAX_USDT": 7.27,
+  "LTC_USDT": 49.38,
+  "ATOM_USDT": 1.475,
+  "TRX_USDT": 0.34121,
+  "BNB_USDT": 690.3,
+  "XMR_USDT": 465.6,
+  "ZEC_USDT": 796.69,
+  "NEAR_USDT": 1.819,
+  "SOL_USDT": 103.38,
+  "LINK_USDT": 11.375,
+  "AAVE_USDT": 121.3,
+};
+// __MEXC_PRICES_END__
+sel.addEventListener('change', () => {
+  const sym = sel.value;
+  // In entry-zone mode the typed price is the PLAN — never overwrite it
+  if (!entryZoneMode) {
+    if (followLive && lastPrices[sym]) {
+      priceIn.value = lastPrices[sym];
+    } else if (PRICE_EXAMPLES[sym]) {
+      priceIn.value = PRICE_EXAMPLES[sym];
+    }
+  }
+  calc();
+});
+
+// ─── Live data polling (via Cloudflare Worker relay — mobile / PWA) ───────────
+// MEXC's public REST API sends NO CORS headers, so a GitHub Pages page (a real
+// https origin) cannot fetch it directly. We route live data through a tiny free
+// Cloudflare Worker that proxies MEXC and adds `Access-Control-Allow-Origin: *`.
+// Prices refresh every poll; contract specs (tiers/fees) refresh every 10 min.
+const LIVE_BASE = 'https://mexc-pwa.vallorstand.workers.dev';
+const MEXC_DETAIL = LIVE_BASE + '/detail';
+const MEXC_TICKER = LIVE_BASE + '/ticker';
+const SPEC_REFRESH_MS = 600000;   // refresh contract specs every 10 min
+let lastSpecFetch = 0;
+
+function fmtPrice(n, c) {
+  const d = c ? (c.priceScale || 2) : 2;
+  return n.toFixed(d);
+}
+
+// Mirror of mexc_data.transform_contract() in JS, so live specs merge into the
+// same CONTRACTS schema the calculator already uses.
+function transformMEXCContract(api) {
+  let tiers = [];
+  const custom = api.riskLimitCustom;
+  if (custom && custom.length) {
+    tiers = custom.map(t => ({
+      maxVol: parseFloat(t.maxVol),
+      mmr: parseFloat(t.mmr),
+      imr: parseFloat(t.imr),
+      maxLev: parseFloat(t.maxLeverage),
+    }));
+  } else {
+    tiers = [{
+      maxVol: parseFloat(api.riskBaseVol || api.maxVol),
+      mmr: parseFloat(api.maintenanceMarginRate),
+      imr: parseFloat(api.initialMarginRate),
+      maxLev: parseFloat(api.maxLeverage),
+    }];
+  }
+  return {
+    coin: api.baseCoin,
+    contractSize: parseFloat(api.contractSize),
+    maxLeverage: parseFloat(api.maxLeverage),
+    takerFee: parseFloat(api.takerFeeRate),
+    makerFee: parseFloat(api.makerFeeRate),
+    mmr: parseFloat(api.maintenanceMarginRate),
+    imr: parseFloat(api.initialMarginRate),
+    liqFee: parseFloat(api.liquidationFeeRate),
+    priceUnit: parseFloat(api.priceUnit),
+    priceScale: parseInt(api.priceScale, 10),
+    maxVol: parseFloat(api.maxVol),
+    minVol: parseFloat(api.minVol),
+    marketOrderBand: parseFloat(api.marketOrderPriceLimitRate1),
+    isZeroFee: !!api.isZeroFeeSymbol,
+    riskLimitMode: api.riskLimitMode,
+    tiers,
+  };
+}
+
+async function pollLive() {
+  let ok = false;
+  let livePrices = null;
+  let liveUpdated = null;
+  try {
+    const tResp = await fetch(MEXC_TICKER, { cache: 'no-store' });
+    if (!tResp.ok) throw new Error('HTTP ' + tResp.status);
+    const tData = await tResp.json();
+    const prices = {};
+    (tData.data || []).forEach(t => {
+      if (CONTRACTS[t.symbol] && t.lastPrice != null) prices[t.symbol] = parseFloat(t.lastPrice);
+    });
+    if (Object.keys(prices).length) { lastPrices = prices; livePrices = prices; }
+
+    const now = Date.now();
+    if (now - lastSpecFetch >= SPEC_REFRESH_MS) {
+      const dResp = await fetch(MEXC_DETAIL, { cache: 'no-store' });
+      if (!dResp.ok) throw new Error('HTTP ' + dResp.status);
+      const dData = await dResp.json();
+      (dData.data || []).forEach(c => {
+        if (CONTRACTS[c.symbol]) Object.assign(CONTRACTS[c.symbol], transformMEXCContract(c));
+      });
+      lastSpecFetch = now;
+      updateCoinInfo();
+    }
+    liveUpdated = new Date().toUTCString();
+    ok = true;
+  } catch (e) { /* network/CORS — snapshot mode */ }
+
+  if (!ok) {
+    livePriceEl.textContent = '—';
+    liveStatusEl.textContent = '⚪ Live updates: not connected (check internet / CORS)';
+    return;
+  }
+
+  const c = getContract();
+  const sym = sel.value;
+  if (livePrices && livePrices[sym]) {
+    livePriceEl.textContent = fmtPrice(livePrices[sym], c) + ' USDT';
+    if (followLive) priceIn.value = livePrices[sym];
+    liveStatusEl.textContent = '🟢 Live updates: connected · every ' + (LIVE_POLL_MS / 1000) + 's';
+  } else {
+    livePriceEl.textContent = '—';
+    liveStatusEl.textContent = '🟡 Live connected, but no price for ' + sym;
+  }
+  if (liveUpdated) $('dataDate').textContent = 'Contract data: live · updated ' + liveUpdated;
+  calc();
+}
+
+pollLive();
+setInterval(pollLive, LIVE_POLL_MS);
+
+// ─── Show data freshness ──────────────────────────────────────────────────────
+document.getElementById('dataDate').textContent =
+  'Contract data: ' + (typeof DATA_DATE !== 'undefined' ? DATA_DATE : 'embedded snapshot');
+
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').catch(function(err) {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
